@@ -54,7 +54,7 @@ export function IssueDetailsModal({ issue, onClose, defaultTab = "images" }) {
     doc.write(`
       <html>
         <head>
-          <title>Civic_Report_${issue._id.substring(0, 8)}</title>
+          <title>InfraSense_Report_${issue._id.substring(0, 8)}</title>
           <style>
             @media print {
               @page { margin: 12mm; size: letter portrait; }
@@ -88,7 +88,7 @@ export function IssueDetailsModal({ issue, onClose, defaultTab = "images" }) {
         <div ref={reportRef} style={{ width: '800px', backgroundColor: '#ffffff', color: '#000000', padding: '40px', fontFamily: 'sans-serif' }}>
           <div style={{ borderBottom: '4px solid #4f46e5', paddingBottom: '16px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
-              <h1 style={{ fontSize: '30px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>Civic Incident Report</h1>
+              <h1 style={{ fontSize: '30px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>InfraSense Incident Report</h1>
               <p style={{ color: '#64748b', fontFamily: 'monospace', marginTop: '4px', margin: 0 }}>ID: {issue._id}</p>
             </div>
             <div style={{ textAlign: 'right' }}>

@@ -1,4 +1,4 @@
-# 🏙️ Crowdsourced Civic Issue Reporting and Resolution System
+# 🏙️ InfraSense - Issue Reporting and Resolution System
 
 A web-based platform that enables citizens to report civic issues (potholes, garbage overflow, water leakage, etc.) and allows municipal authorities to manage and resolve them efficiently through automated worker assignment.
 

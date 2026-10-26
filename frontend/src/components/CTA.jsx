@@ -46,7 +46,7 @@ export function CTA() {
             How It Works
           </h2>
           <p className="text-xl text-slate-400 font-medium leading-relaxed">
-            Reporting civic issues is simple and straightforward. Follow these four easy steps to make a difference.
+            Reporting issues with InfraSense is simple and straightforward. Follow these four easy steps to make a difference.
           </p>
         </div>
 

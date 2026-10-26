@@ -158,7 +158,7 @@ export function ReportIssuePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex flex-col relative overflow-hidden">
-      <DashboardHeader title="Civic Reporting Engine" />
+      <DashboardHeader title="InfraSense" />
 
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-indigo-900 via-violet-900 to-slate-50 overflow-hidden -z-10">
