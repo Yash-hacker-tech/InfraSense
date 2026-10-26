@@ -3,6 +3,7 @@ import { apiFetch } from "../../api/client";
 import { DashboardHeader } from "../../components/DashboardHeader";
 import { StatusTimeline } from "../../components/StatusTimeline";
 import { IssueMarkerMap } from "../../components/IssueMarkerMap";
+import { compressAndReadImage } from "../../utils/imageUtils";
 
 export function WorkerDashboardPage() {
   const [issues, setIssues] = useState([]);
@@ -15,6 +16,7 @@ export function WorkerDashboardPage() {
   
   // State for completion image upload
   const [completionImage, setCompletionImage] = useState("");
+  const [processingProof, setProcessingProof] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -33,14 +35,22 @@ export function WorkerDashboardPage() {
     }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
+  const handleImageChange = async (e) => {
+    const file = e.target.files && e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCompletionImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        setProcessingProof(true);
+        setError(null);
+        const optimizedImage = await compressAndReadImage(file);
+        setCompletionImage(optimizedImage);
+      } catch (err) {
+        alert(err.message || "Failed to process photo.");
+      } finally {
+        setProcessingProof(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
     }
   };
 
@@ -247,31 +257,58 @@ export function WorkerDashboardPage() {
 
                 {selectedIssue.status === "InProgress" && (
                   <div className="space-y-4 bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
-                    <h4 className="font-bold text-indigo-900 text-sm">Action Required: Proof of Work</h4>
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-bold text-indigo-900 text-sm">Action Required: Proof of Work</h4>
+                      {completionImage && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setCompletionImage(""); }}
+                          className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          Remove Photo
+                        </button>
+                      )}
+                    </div>
                     
                     <input 
-                      type="file" accept="image/*" capture="environment" className="hidden" 
+                      type="file" accept="image/*" className="hidden" 
                       ref={fileInputRef} onChange={handleImageChange} 
                     />
                     
                     <div 
-                      onClick={() => fileInputRef.current.click()}
-                      className={`h-32 rounded-xl flex items-center justify-center cursor-pointer border-2 border-dashed transition-all bg-white
-                        ${completionImage ? 'border-green-500' : 'border-indigo-300 hover:border-indigo-400'}`}
+                      onClick={() => !processingProof && fileInputRef.current && fileInputRef.current.click()}
+                      className={`h-36 rounded-xl flex items-center justify-center cursor-pointer border-2 border-dashed transition-all bg-white relative overflow-hidden group
+                        ${completionImage ? 'border-green-500 shadow-inner' : 'border-indigo-300 hover:border-indigo-400 hover:bg-indigo-50/50'}`}
                     >
-                       {completionImage ? (
-                         <img src={completionImage} alt="Completion Proof" className="h-full w-full object-cover rounded-lg" />
+                       {processingProof ? (
+                         <div className="flex flex-col items-center justify-center">
+                           <svg className="animate-spin h-6 w-6 text-indigo-600 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                           </svg>
+                           <span className="text-xs font-bold text-indigo-700">Processing proof photo...</span>
+                         </div>
+                       ) : completionImage ? (
+                         <>
+                           <img src={completionImage} alt="Completion Proof" className="h-full w-full object-cover" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                             <span className="text-white text-xs font-bold bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/30">Replace Photo</span>
+                           </div>
+                         </>
                        ) : (
-                         <span className="text-sm font-semibold text-indigo-600">📸 Take Photo of Completed Work</span>
+                         <div className="text-center p-3">
+                           <span className="text-sm font-semibold text-indigo-600 block">📸 Attach Photo of Completed Work</span>
+                           <span className="text-xs text-slate-400 mt-1 block">From camera or file gallery</span>
+                         </div>
                        )}
                     </div>
 
                     <button 
                       onClick={() => handleUpdateStatus(selectedIssue._id, "Resolved")}
-                      disabled={actionLoading || !completionImage}
+                      disabled={actionLoading || processingProof || !completionImage}
                       className="w-full py-4 rounded-xl font-black tracking-wide text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 transition-all shadow-xl shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed mt-4 transform hover:-translate-y-1"
                     >
-                      {actionLoading ? "Resolving..." : "Submit Proof & Resolve Issue"}
+                      {actionLoading ? "Resolving..." : processingProof ? "Optimizing photo..." : "Submit Proof & Resolve Issue"}
                     </button>
                   </div>
                 )}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../api/client";
 import { DashboardHeader } from "../../components/DashboardHeader";
+import { compressAndReadImage } from "../../utils/imageUtils";
 
 export function ReportIssuePage() {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ export function ReportIssuePage() {
   const [description, setDescription] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [base64Image, setBase64Image] = useState("");
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [location, setLocation] = useState({ lat: "", lng: "" });
   const [findingLocation, setFindingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
@@ -32,14 +35,57 @@ export function ReportIssuePage() {
     loadDepartments();
   }, []);
 
+  const processAndSetFile = async (file) => {
+    if (!file) return;
+    try {
+      setIsProcessingImage(true);
+      setError(null);
+      const optimizedImage = await compressAndReadImage(file);
+      setBase64Image(optimizedImage);
+    } catch (err) {
+      setError(err.message || "Failed to process image.");
+    } finally {
+      setIsProcessingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files && e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBase64Image(reader.result);
-      };
-      reader.readAsDataURL(file);
+      processAndSetFile(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processAndSetFile(files[0]);
+    }
+  };
+
+  const handleRemoveImage = (e) => {
+    e.stopPropagation();
+    setBase64Image("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -182,26 +228,52 @@ export function ReportIssuePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
               {/* Image Upload */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2 tracking-wide uppercase">Photographic Proof</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-bold text-slate-700 tracking-wide uppercase">Photographic Proof</label>
+                  {base64Image && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Remove
+                    </button>
+                  )}
+                </div>
+
                 <input 
                   type="file" 
                   accept="image/*" 
-                  capture="environment"
                   className="hidden" 
                   ref={fileInputRef} 
                   onChange={handleImageChange} 
                 />
                 
                 <div 
-                  onClick={() => fileInputRef.current.click()}
+                  onClick={() => !isProcessingImage && fileInputRef.current && fileInputRef.current.click()}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                   className={`border-2 border-dashed rounded-[2rem] p-6 flex flex-col items-center justify-center cursor-pointer transition-all h-56 relative overflow-hidden group
+                    ${isDragging ? 'border-indigo-600 bg-indigo-100/60 scale-[1.01]' : ''}
                     ${base64Image ? 'border-indigo-500 bg-indigo-50 shadow-inner' : 'border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-slate-100 shadow-sm'}`}
                 >
-                  {base64Image ? (
+                  {isProcessingImage ? (
+                    <div className="flex flex-col items-center justify-center text-center p-4">
+                      <svg className="animate-spin h-8 w-8 text-indigo-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-sm font-bold text-indigo-900">Optimizing image...</span>
+                    </div>
+                  ) : base64Image ? (
                      <>
                        <img src={base64Image} alt="Preview" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="bg-white/20 backdrop-blur-md text-white font-bold py-2 px-4 rounded-xl border border-white/30">Replace Image</span>
+                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                          <span className="bg-white/20 backdrop-blur-md text-white font-bold py-2 px-4 rounded-xl border border-white/30 text-sm">Replace Photo</span>
                        </div>
                      </>
                   ) : (
@@ -211,8 +283,10 @@ export function ReportIssuePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                        </div>
-                      <span className="text-base font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">Tap to attach photo</span>
-                      <p className="text-xs text-slate-500 mt-2 font-medium">JPEG, PNG, GIF up to 5MB</p>
+                      <span className="text-base font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">
+                        {isDragging ? "Drop image here" : "Click to select or drag photo here"}
+                      </span>
+                      <p className="text-xs text-slate-500 mt-2 font-medium">JPEG, PNG, WebP, GIF from files or camera</p>
                     </div>
                   )}
                 </div>
@@ -269,13 +343,18 @@ export function ReportIssuePage() {
 
             <div className="pt-8 mt-4 border-t border-slate-100">
                <button
-                type="submit" disabled={loading}
-                className={`w-full py-4.5 px-6 rounded-2xl text-white font-black text-lg tracking-wide shadow-xl shadow-indigo-500/30 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all focus:ring-4 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-wait' : 'hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/40'}`}
+                type="submit" disabled={loading || isProcessingImage}
+                className={`w-full py-4.5 px-6 rounded-2xl text-white font-black text-lg tracking-wide shadow-xl shadow-indigo-500/30 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all focus:ring-4 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center gap-2 ${(loading || isProcessingImage) ? 'opacity-70 cursor-wait' : 'hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/40'}`}
               >
                 {loading ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     Transmitting...
+                  </>
+                ) : isProcessingImage ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Optimizing Photo...
                   </>
                 ) : (
                   <>

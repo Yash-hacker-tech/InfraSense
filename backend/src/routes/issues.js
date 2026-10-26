@@ -31,13 +31,14 @@ issuesRouter.post("/", requireRole("Citizen"), async (req, res) => {
     }
 
     // 3. Create the issue report
-    // Upload Base64 image string to Cloudinary
+    // Upload Base64 image string to Cloudinary if configured, or retain image data
     let secureImageUrl = imageUrl;
     if (imageUrl && imageUrl.startsWith("data:image")) {
       try {
         secureImageUrl = await uploadBase64Image(imageUrl, "civic/reports");
       } catch (uploadErr) {
-        return res.status(500).json({ message: "Failed to upload image. Please try again." });
+        console.warn("Image upload fallback to raw image:", uploadErr?.message || uploadErr);
+        secureImageUrl = imageUrl;
       }
     }
 

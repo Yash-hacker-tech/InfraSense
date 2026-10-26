@@ -74,13 +74,14 @@ workerRouter.put("/issues/:id/status", async (req, res) => {
        // The DB enum says: ["Submitted", "Assigned", "InProgress", "Resolved"]
        issue.status = "Resolved";
        
-       // Handle Cloudinary Upload for Workers
+       // Handle Image Upload for Workers (Cloudinary if configured, or direct image data)
        let secureCompletionImage = completionImageUrl;
        if (completionImageUrl && completionImageUrl.startsWith("data:image")) {
          try {
            secureCompletionImage = await uploadBase64Image(completionImageUrl, "civic/proofs");
          } catch (uploadErr) {
-           return res.status(500).json({ message: "Failed to upload proof image." });
+           console.warn("Worker proof image upload fallback to raw image:", uploadErr?.message || uploadErr);
+           secureCompletionImage = completionImageUrl;
          }
        }
        issue.completionImageUrl = secureCompletionImage;
