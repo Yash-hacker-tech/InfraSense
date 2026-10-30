@@ -71,8 +71,8 @@ This system automates the entire lifecycle of civic complaints — from reportin
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-username/civic-issue-reporting.git
-   cd civic-issue-reporting
+   git clone https://github.com/Yash-hacker-tech/InfraSense.git
+   cd InfraSense
    ```
 
 2. **Install backend dependencies**
@@ -121,14 +121,14 @@ This system automates the entire lifecycle of civic complaints — from reportin
 ## 📂 Project Structure
 
 ```
-civic/
-├── client/              # React.js frontend
+infrasense/
+├── frontend/            # React.js frontend
 │   ├── public/
 │   └── src/
 │       ├── components/
 │       ├── pages/
 │       └── ...
-├── server/              # Node.js + Express backend
+├── backend/             # Node.js + Express backend
 │   ├── controllers/
 │   ├── models/
 │   ├── routes/

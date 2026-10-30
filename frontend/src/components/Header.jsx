@@ -8,10 +8,10 @@ export function Header() {
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">
-              C
+              I
             </div>
             <span className="font-bold text-xl tracking-tight text-gray-900">
-              CivicConnect
+              InfraSense
             </span>
           </div>
           <nav className="flex items-center space-x-6">

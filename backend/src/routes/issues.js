@@ -7,6 +7,7 @@ const { authMiddleware } = require("../middleware/auth");
 const { requireRole } = require("../middleware/requireRole");
 const { autoAssignWorker } = require("../services/assignmentService");
 const { uploadBase64Image } = require("../utils/cloudinary");
+const { verifyIssueAntiSpam } = require("../services/spamDetectionService");
 
 const issuesRouter = express.Router();
 
@@ -30,7 +31,23 @@ issuesRouter.post("/", requireRole("Citizen"), async (req, res) => {
       return res.status(404).json({ message: "Invalid department selected." });
     }
 
-    // 3. Create the issue report
+    // 3. AI Anti-Spam & Duplicate Verification (Location, Image Similarity, Ollama Llama 3)
+    const spamCheck = await verifyIssueAntiSpam({
+      description,
+      imageUrl,
+      location,
+      category,
+    });
+
+    if (spamCheck.isSpam) {
+      return res.status(409).json({
+        message: spamCheck.reason,
+        featureFlagged: spamCheck.featureFlagged,
+        duplicateIssueId: spamCheck.duplicateIssueId || null,
+      });
+    }
+
+    // 4. Create the issue report
     // Upload Base64 image string to Cloudinary if configured, or retain image data
     let secureImageUrl = imageUrl;
     if (imageUrl && imageUrl.startsWith("data:image")) {
@@ -46,6 +63,7 @@ issuesRouter.post("/", requireRole("Citizen"), async (req, res) => {
       citizenId,
       description,
       imageUrl: secureImageUrl,
+      imageHash: spamCheck.imageHash || null,
       location: { lat: Number(location.lat), lng: Number(location.lng) },
       category,
       departmentId,
@@ -55,7 +73,7 @@ issuesRouter.post("/", requireRole("Citizen"), async (req, res) => {
 
     await newIssue.save();
 
-    // 4. Trigger the Module 9 geospatial auto-assignment engine asynchronously!
+    // 5. Trigger the Module 9 geospatial auto-assignment engine asynchronously!
     // We execute this and wait for it so the UI explicitly knows if it was Assigned instantly.
     const assignedIssue = await autoAssignWorker(newIssue._id);
 

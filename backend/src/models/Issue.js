@@ -14,6 +14,10 @@ const issueSchema = new mongoose.Schema({
     type: String,
     required: true, // we will use Base64 MVP
   },
+  imageHash: {
+    type: String,
+    default: null,
+  },
   location: {
     lat: { type: Number, required: true },
     lng: { type: Number, required: true }

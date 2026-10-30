@@ -37,7 +37,7 @@ const HeroSection = React.forwardRef(
   (
     {
       className,
-      title = "Civic Connect Infrastructure",
+      title = "InfraSense Infrastructure",
       subtitle = {
         regular: "Effortlessly Track ",
         gradient: "and Resolve Issues",

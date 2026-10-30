@@ -23,7 +23,7 @@ export function DashboardHeader({ title, children }) {
                   <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2zm0 2.8l7 7h-2v6h-4v-6H11v6H7v-6H5l7-7z"/>
                 </svg>
               </div>
-              <span className="font-black text-xl tracking-tight hidden sm:block bg-gradient-to-r from-indigo-700 to-indigo-500 bg-clip-text text-transparent">Civic System</span>
+              <span className="font-black text-xl tracking-tight hidden sm:block bg-gradient-to-r from-indigo-700 to-indigo-500 bg-clip-text text-transparent">InfraSense</span>
             </Link>
             
             {title && (
